@@ -14081,7 +14081,7 @@ fn (mut b Builder) build_cast_expr(node flat.Node) ValueID {
 				// Keep the bits, but spell the value using the destination's signedness.
 				magnitude := u64(global_integer_literal(constant.name.trim_left('+-')))
 				bits := if constant.name.starts_with('-') { u64(0) - magnitude } else { magnitude }
-				name := (if b.is_unsigned_type(target_type) { bits } else { i64(bits) }).str()
+				name := if b.is_unsigned_type(target_type) { bits.str() } else { i64(bits).str() }
 				return b.m.get_or_add_const(target_type, name)
 			}
 		}
