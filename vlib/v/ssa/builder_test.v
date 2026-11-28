@@ -177,6 +177,7 @@ fn test_64_bit_integer_constant_casts_use_the_target_type() {
 	defer { os.rm(path) or {} }
 	os.write_file(path, 'fn high_bit() u64 { return u64(9223372036854775808) }
 fn signed_high_bit() i64 { return i64(u64(9223372036854775808)) }
+fn unsigned_again() u64 { return u64(i64(u64(0xffff_ffff_ffff_ffff))) }
 fn dynamic_cast(value i64) u64 { return u64(value) }
 ')!
 	mut p := parser.Parser.new(pref.new_preferences())
@@ -191,9 +192,14 @@ fn dynamic_cast(value i64) u64 { return u64(value) }
 		target: TargetData{ ptr_size: 8 }
 	})
 
+	names := {
+		'high_bit':        '9223372036854775808'
+		'signed_high_bit': '-9223372036854775808'
+		'unsigned_again':  '18446744073709551615'
+	}
 	mut found := 0
 	for f in m.funcs {
-		if f.name !in ['high_bit', 'signed_high_bit', 'dynamic_cast'] {
+		if f.name !in names && f.name != 'dynamic_cast' {
 			continue
 		}
 		last := m.blocks[f.blocks[0]].instrs.last()
@@ -207,11 +213,11 @@ fn dynamic_cast(value i64) u64 { return u64(value) }
 			assert result.kind == .instruction && m.instrs[result.index].op == .bitcast
 		} else {
 			assert result.kind == .constant, f.name
-			assert result.name == '9223372036854775808', f.name
+			assert result.name == names[f.name], f.name
 		}
 		found++
 	}
-	assert found == 3
+	assert found == 4
 }
 
 fn test_rune_literals_use_rune_width() {
